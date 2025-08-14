@@ -11,10 +11,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useDetectionData } from "@/src/hooks/useDetectionData";
+import { useLocalSimulation } from "@/src/hooks/useLocalSimulation";
 
 export function AlertPanel() {
-  const { alerts, clearAlerts, loading } = useDetectionData();
+  const { alerts } = useLocalSimulation();
+  const loading = false; // No loading state needed for local simulation
+
+  const clearAlerts = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  };
 
   const getSeverityColor = (severity) => {
     switch (severity) {
@@ -36,7 +41,7 @@ export function AlertPanel() {
   };
 
   const formatScore = (score) => {
-    return score.toFixed(2);
+    return (score || 0).toFixed(2);
   };
 
   return (

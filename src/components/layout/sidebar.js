@@ -15,10 +15,11 @@ const navigation = [
 function SidebarContent({ className = "", onItemClick }) {
   return (
     <div className={cn("flex h-full flex-col", className)}>
-      <div className="flex h-16 items-center border-b px-4 lg:px-6 lg:hidden">
+      {/* TODO: UNCOMMENT THE BLOCK OF CODE BELOW AND STYLE THE ELEMENT NOT TO APPEAR ON DESKTOP VIEW */}
+      {/* <div className="flex h-16 items-center border-b px-4 lg:px-6">
         <Shield className="h-6 w-6 text-primary" />
         <span className="ml-2 text-lg font-semibold">IDS</span>
-      </div>
+      </div> */}
 
       <nav className="flex-1 space-y-1 p-3 lg:p-4">
         {navigation.map((item) => (

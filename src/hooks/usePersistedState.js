@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useLocalStorage } from "./useLocalStorage"
+import { useLocalStorage } from "./useLocalStorage";
 
 export function usePersistedState() {
   const [preferences, setPreferences] = useLocalStorage("ids-preferences", {
@@ -14,13 +14,21 @@ export function usePersistedState() {
       animateCharts: true,
       chartColors: "default",
     },
-  })
+  });
 
-  const [dashboardLayout, setDashboardLayout] = useLocalStorage("ids-dashboard-layout", {
-    sidebarCollapsed: false,
-    chartOrder: ["anomaly-score", "anomaly-gauge", "event-distribution", "metrics"],
-    hiddenPanels: [],
-  })
+  const [dashboardLayout, setDashboardLayout] = useLocalStorage(
+    "ids-dashboard-layout",
+    {
+      sidebarCollapsed: false,
+      chartOrder: [
+        "anomaly-score",
+        "anomaly-gauge",
+        "event-distribution",
+        "metrics",
+      ],
+      hiddenPanels: [],
+    }
+  );
 
   const [filterSettings, setFilterSettings] = useLocalStorage("ids-filters", {
     eventFilters: {
@@ -34,19 +42,19 @@ export function usePersistedState() {
       severityFilter: "all",
       timeRange: "24h",
     },
-  })
+  });
 
   const updatePreferences = (updates) => {
-    setPreferences((prev) => ({ ...prev, ...updates }))
-  }
+    setPreferences((prev) => ({ ...prev, ...updates }));
+  };
 
   const updateDashboardLayout = (updates) => {
-    setDashboardLayout((prev) => ({ ...prev, ...updates }))
-  }
+    setDashboardLayout((prev) => ({ ...prev, ...updates }));
+  };
 
   const updateFilterSettings = (updates) => {
-    setFilterSettings((prev) => ({ ...prev, ...updates }))
-  }
+    setFilterSettings((prev) => ({ ...prev, ...updates }));
+  };
 
   const resetToDefaults = () => {
     setPreferences({
@@ -60,12 +68,17 @@ export function usePersistedState() {
         animateCharts: true,
         chartColors: "default",
       },
-    })
+    });
     setDashboardLayout({
       sidebarCollapsed: false,
-      chartOrder: ["anomaly-score", "anomaly-gauge", "event-distribution", "metrics"],
+      chartOrder: [
+        "anomaly-score",
+        "anomaly-gauge",
+        "event-distribution",
+        "metrics",
+      ],
       hiddenPanels: [],
-    })
+    });
     setFilterSettings({
       eventFilters: {
         showErrors: true,
@@ -78,8 +91,8 @@ export function usePersistedState() {
         severityFilter: "all",
         timeRange: "24h",
       },
-    })
-  }
+    });
+  };
 
   return {
     preferences,
@@ -89,5 +102,5 @@ export function usePersistedState() {
     updateDashboardLayout,
     updateFilterSettings,
     resetToDefaults,
-  }
+  };
 }

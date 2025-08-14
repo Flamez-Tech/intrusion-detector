@@ -1,50 +1,56 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Shield, Sliders } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
-import { Badge } from "@/components/ui/badge"
-import { useDetectionData } from "@/src/hooks/useDetectionData"
-import { useMobile } from "@/src/hooks/useMobile" // Added mobile hook for responsive design
+import { useState } from "react";
+import { Shield, Sliders } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { useLocalSimulation } from "@/src/hooks/useLocalSimulation";
+import { useMobile } from "@/src/hooks/useMobile"; // Added mobile hook for responsive design
 
 export function DetectionControls() {
-  const { status, setThreshold, clearAlerts } = useDetectionData()
-  const [localThreshold, setLocalThreshold] = useState([2.5])
-  const [loading, setLoading] = useState(false)
-  const isMobile = useMobile() // Added mobile hook for responsive design
+  const { status } = useLocalSimulation(); // Updated to use local simulation data
+  const [localThreshold, setLocalThreshold] = useState([2.5]);
+  const [loading, setLoading] = useState(false);
+  const isMobile = useMobile(); // Added mobile hook for responsive design
 
-  const currentThreshold = status?.detector?.threshold || 2.5
-  const isReady = status?.detector?.isReady || false
-  const sampleCount = status?.detector?.sampleCount || 0
-  const alertCount = status?.detector?.alertCount || 0
+  const currentThreshold = 2.5; // Updated status properties for local simulation
+  const isReady = status?.isRunning || false;
+  const sampleCount = status?.eventsGenerated || 0;
+  const alertCount = status?.alertsGenerated || 0;
 
   const handleThresholdChange = async (value) => {
-    setLocalThreshold(value)
-  }
+    setLocalThreshold(value);
+  };
 
   const handleThresholdCommit = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      await setThreshold(localThreshold[0])
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (error) {
-      console.error("Failed to set threshold:", error)
+      console.error("Failed to set threshold:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleClearAlerts = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      await clearAlerts()
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (error) {
-      console.error("Failed to clear alerts:", error)
+      console.error("Failed to clear alerts:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Card>
@@ -54,15 +60,21 @@ export function DetectionControls() {
             <Shield className="h-5 w-5 flex-shrink-0" />
             <span className="text-base sm:text-lg">Detection Settings</span>
           </div>
-          <Badge variant={isReady ? "default" : "secondary"}>{isReady ? "Active" : "Learning"}</Badge>
+          <Badge variant={isReady ? "default" : "secondary"}>
+            {isReady ? "Active" : "Learning"}
+          </Badge>
         </CardTitle>
-        <CardDescription className="text-sm">Configure anomaly detection sensitivity and manage alerts</CardDescription>
+        <CardDescription className="text-sm">
+          Configure anomaly detection sensitivity and manage alerts
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 sm:space-y-6">
         <div className="space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Sensitivity Threshold</label>
-            <span className="text-sm font-mono bg-muted px-2 py-1 rounded">{localThreshold[0].toFixed(1)}</span>
+            <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+              {localThreshold[0].toFixed(1)}
+            </span>
           </div>
 
           <div className="px-1">
@@ -106,5 +118,5 @@ export function DetectionControls() {
         </Button>
       </CardContent>
     </Card>
-  )
+  );
 }

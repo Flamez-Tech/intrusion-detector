@@ -4,12 +4,12 @@ import { Moon, Sun, Shield, Wifi, WifiOff, Menu } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useSocket } from "@/src/hooks/useSocket"
 import { useMobile } from "@/hooks/use-mobile"
 
 export function Navbar({ onMenuClick }) {
   const { theme, setTheme } = useTheme()
-  const { isConnected, connectionError } = useSocket()
+  const isConnected = true
+  const connectionError = null
   const isMobile = useMobile()
 
   return (

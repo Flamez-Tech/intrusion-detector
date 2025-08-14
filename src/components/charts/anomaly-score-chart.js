@@ -1,42 +1,52 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { TrendingUp, TrendingDown } from "lucide-react"
-import { useDetectionData } from "@/src/hooks/useDetectionData"
-import { useMobile } from "@/hooks/use-mobile"
+import { useState, useEffect } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { useLocalSimulation } from "@/src/hooks/useLocalSimulation";
+import { useMobile } from "@/hooks/use-mobile";
 
 export function AnomalyScoreChart() {
-  const { anomalyData, status } = useDetectionData()
-  const [scoreHistory, setScoreHistory] = useState([])
-  const isMobile = useMobile()
+  const { anomalyScores, status } = useLocalSimulation();
+  const [scoreHistory, setScoreHistory] = useState([]);
+  const isMobile = useMobile();
 
-  const threshold = status?.detector?.threshold || 2.5
+  const threshold = 2.5;
 
   useEffect(() => {
-    if (anomalyData) {
-      const newDataPoint = {
-        timestamp: new Date(anomalyData.timestamp).toLocaleTimeString(),
-        score: anomalyData.compositeScore,
+    if (anomalyScores.length > 0) {
+      const formattedData = anomalyScores.slice(0, 50).map((score) => ({
+        timestamp: new Date(score.timestamp).toLocaleTimeString(),
+        score: score.score,
         threshold: threshold,
-        isAnomaly: anomalyData.isAnomaly,
-      }
-
-      setScoreHistory((prev) => {
-        const updated = [...prev, newDataPoint].slice(-50)
-        return updated
-      })
+        isAnomaly: score.score > threshold,
+      }));
+      setScoreHistory(formattedData.reverse());
     }
-  }, [anomalyData, threshold])
+  }, [anomalyScores, threshold]);
 
-  const currentScore = anomalyData?.compositeScore || 0
-  const isAnomaly = anomalyData?.isAnomaly || false
+  const currentScore = anomalyScores[0]?.score || 0;
+  const isAnomaly = currentScore > threshold;
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload
+      const data = payload[0].payload;
       return (
         <div className="bg-background border rounded-lg p-3 shadow-lg">
           <p className="text-sm font-medium">{`Time: ${label}`}</p>
@@ -54,10 +64,10 @@ export function AnomalyScoreChart() {
             </Badge>
           )}
         </div>
-      )
+      );
     }
-    return null
-  }
+    return null;
+  };
 
   return (
     <Card>
@@ -70,15 +80,22 @@ export function AnomalyScoreChart() {
             ) : (
               <TrendingDown className="h-4 w-4 text-green-500" />
             )}
-            <Badge variant={isAnomaly ? "destructive" : "secondary"}>{currentScore.toFixed(2)}</Badge>
+            <Badge variant={isAnomaly ? "destructive" : "secondary"}>
+              {currentScore.toFixed(2)}
+            </Badge>
           </div>
         </CardTitle>
-        <CardDescription className="text-sm">Real-time anomaly detection scores with threshold line</CardDescription>
+        <CardDescription className="text-sm">
+          Real-time anomaly detection scores with threshold line
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-48 sm:h-64 lg:h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={scoreHistory} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+            <LineChart
+              data={scoreHistory}
+              margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 dataKey="timestamp"
@@ -86,7 +103,10 @@ export function AnomalyScoreChart() {
                 tick={{ fontSize: isMobile ? 8 : 10 }}
                 interval={isMobile ? "preserveStartEnd" : 0}
               />
-              <YAxis className="text-xs fill-muted-foreground" tick={{ fontSize: isMobile ? 8 : 10 }} />
+              <YAxis
+                className="text-xs fill-muted-foreground"
+                tick={{ fontSize: isMobile ? 8 : 10 }}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Line
                 type="monotone"
@@ -102,7 +122,11 @@ export function AnomalyScoreChart() {
                 dataKey="score"
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
-                dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: isMobile ? 2 : 3 }}
+                dot={{
+                  fill: "hsl(var(--primary))",
+                  strokeWidth: 2,
+                  r: isMobile ? 2 : 3,
+                }}
                 activeDot={{ r: isMobile ? 4 : 5, fill: "hsl(var(--primary))" }}
                 name="Anomaly Score"
               />
@@ -111,5 +135,5 @@ export function AnomalyScoreChart() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -1,80 +1,89 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Activity, Cpu, HardDrive, Wifi, Clock } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { useDetectionData } from "@/src/hooks/useDetectionData"
-import { useSocket } from "@/src/hooks/useSocket"
+import { useState, useEffect } from "react";
+import { Activity, Cpu, HardDrive, Wifi, Clock } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useLocalSimulation } from "@/src/hooks/useLocalSimulation";
 
 export function SystemStatus() {
-  const { status, isConnected } = useDetectionData()
-  const { connectionError } = useSocket()
+  const { status } = useLocalSimulation();
+  const isConnected = true; // Always connected in local simulation
+  const connectionError = null;
+  const [mounted, setMounted] = useState(false);
   const [systemMetrics, setSystemMetrics] = useState({
     uptime: 0,
     memoryUsage: 0,
     eventProcessingRate: 0,
     lastUpdate: new Date(),
-  })
+  });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (status?.metrics) {
-        const uptime = status.metrics.uptime || 0
-        const eventsGenerated = status.metrics.eventsGenerated || 0
+        const uptime = status.metrics.uptime || 0;
+        const eventsGenerated = status.metrics.eventsGenerated || 0;
 
         setSystemMetrics((prev) => ({
           uptime: uptime,
           memoryUsage: Math.random() * 100, // Simulated memory usage
           eventProcessingRate: eventsGenerated / (uptime / 1000 || 1),
           lastUpdate: new Date(),
-        }))
+        }));
       }
-    }, 5000)
+    }, 5000);
 
-    return () => clearInterval(interval)
-  }, [status])
+    return () => clearInterval(interval);
+  }, [status]);
 
   const formatUptime = (milliseconds) => {
-    const seconds = Math.floor(milliseconds / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
 
-    if (days > 0) return `${days}d ${hours % 24}h`
-    if (hours > 0) return `${hours}h ${minutes % 60}m`
-    if (minutes > 0) return `${minutes}m ${seconds % 60}s`
-    return `${seconds}s`
-  }
+    if (days > 0) return `${days}d ${hours % 24}h`;
+    if (hours > 0) return `${hours}h ${minutes % 60}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+    return `${seconds}s`;
+  };
 
   const getSystemHealth = () => {
-    if (!isConnected) return { status: "error", message: "Disconnected" }
-    if (connectionError) return { status: "error", message: "Connection Error" }
-    if (!status?.isRunning) return { status: "warning", message: "Simulation Stopped" }
-    if (systemMetrics.memoryUsage > 90) return { status: "warning", message: "High Memory Usage" }
-    return { status: "healthy", message: "All Systems Operational" }
-  }
+    if (!isConnected) return { status: "error", message: "Disconnected" };
+    if (connectionError)
+      return { status: "error", message: "Connection Error" };
+    if (!status?.isRunning)
+      return { status: "warning", message: "Simulation Stopped" };
+    if (systemMetrics.memoryUsage > 90)
+      return { status: "warning", message: "High Memory Usage" };
+    return { status: "healthy", message: "All Systems Operational" };
+  };
 
-  const lastUpdateStr = systemMetrics.lastUpdate.toLocaleTimeString("en-US", {
-    hour12: false,
-  });
-
-
-  const health = getSystemHealth()
+  const health = getSystemHealth();
 
   const getHealthColor = (status) => {
     switch (status) {
       case "healthy":
-        return "text-green-600 bg-green-100 border-green-200"
+        return "text-green-600 bg-green-100 border-green-200";
       case "warning":
-        return "text-yellow-600 bg-yellow-100 border-yellow-200"
+        return "text-yellow-600 bg-yellow-100 border-yellow-200";
       case "error":
-        return "text-red-600 bg-red-100 border-red-200"
+        return "text-red-600 bg-red-100 border-red-200";
       default:
-        return "text-gray-600 bg-gray-100 border-gray-200"
+        return "text-gray-600 bg-gray-100 border-gray-200";
     }
-  }
+  };
 
   return (
     <Card>
@@ -206,10 +215,10 @@ export function SystemStatus() {
           </div>
         )}
 
-        {/* TODO: UNCOMMENT THE BLOCK OF CODE BELOW AND DEBUG IT  */}
         {/* Last Update */}
         <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-          Last updated: {lastUpdateStr}
+          Last updated:{" "}
+          {mounted ? systemMetrics.lastUpdate.toLocaleTimeString() : "--:--:--"}
         </div>
       </CardContent>
     </Card>

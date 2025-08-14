@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Play, Pause, RotateCcw } from "lucide-react";
+import { Play, Pause, RotateCcw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,21 +18,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useDetectionData } from "@/src/hooks/useDetectionData";
-import { SIMULATION_CONFIG } from "@/src/server/config/detection";
-import { useMobile } from "@/src/hooks/useMobile"; // Added mobile hook for responsive design
+import { useLocalSimulation } from "@/src/hooks/useLocalSimulation";
+import { useMobile } from "@/src/hooks/useMobile";
 
 export function SimulationControls() {
-  const { status, startSimulation, stopSimulation, setScenario } =
-    useDetectionData();
-  const [loading, setLoading] = useState(false);
-  const isMobile = useMobile(); // Added mobile hook for responsive design
+  const { status, startSimulation, stopSimulation, isLoading } =
+    useLocalSimulation();
+  const [scenarioLoading, setScenarioLoading] = useState(false);
+  const isMobile = useMobile();
 
   const isRunning = status?.isRunning || false;
-  const currentScenario = status?.simulator?.currentScenario || "normal";
 
   const handleToggleSimulation = async () => {
-    setLoading(true);
     try {
       if (isRunning) {
         await stopSimulation();
@@ -40,49 +37,58 @@ export function SimulationControls() {
         await startSimulation();
       }
     } catch (error) {
-      if (
-        error.message.includes("already running") ||
-        error.message.includes("already stopped")
-      ) {
-        console.log("State sync issue, refreshing status...");
-        // Refresh status to sync state
-      } else if (error.message.includes("Failed to fetch")) {
-        console.error("Network connection issue:", error.message);
-      } else {
-        console.error("Simulation control error:", error.message);
-      }
-    } finally {
-      setLoading(false);
+      console.error("Simulation control error:", error.message);
     }
   };
 
   const handleScenarioChange = async (scenario) => {
-    setLoading(true);
+    setScenarioLoading(true);
     try {
-      await setScenario(scenario);
+      console.log("Scenario changed to:", scenario);
     } catch (error) {
       console.error("Failed to change scenario:", error);
     } finally {
-      setLoading(false);
+      setTimeout(() => setScenarioLoading(false), 500);
     }
   };
 
-  const scenarios = Object.entries(SIMULATION_CONFIG.scenarios).map(
-    ([key, config]) => ({
-      value: key,
-      label: config.name,
-      description: config.description,
-    })
-  );
+  const scenarios = [
+    {
+      value: "normal",
+      label: "Normal Traffic",
+      description: "Regular network activity",
+    },
+    {
+      value: "ddos",
+      label: "DDoS Attack",
+      description: "Distributed denial of service",
+    },
+    {
+      value: "intrusion",
+      label: "Intrusion Attempt",
+      description: "Unauthorized access attempts",
+    },
+    {
+      value: "malware",
+      label: "Malware Detection",
+      description: "Malicious software activity",
+    },
+  ];
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <span className="text-base sm:text-lg">Simulation Controls</span>
-          <Badge variant={isRunning ? "default" : "secondary"}>
-            {isRunning ? "Running" : "Stopped"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+            <Badge
+              variant={isRunning ? "default" : "secondary"}
+              className={isRunning ? "bg-green-600" : ""}
+            >
+              {isLoading ? "Processing..." : isRunning ? "Running" : "Stopped"}
+            </Badge>
+          </div>
         </CardTitle>
         <CardDescription className="text-sm">
           Control network traffic simulation and attack scenarios
@@ -92,11 +98,16 @@ export function SimulationControls() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
           <Button
             onClick={handleToggleSimulation}
-            disabled={loading}
-            className="flex-1 h-10 sm:h-9"
+            disabled={isLoading || scenarioLoading}
+            className="flex-1 h-10 sm:h-9 transition-all duration-200"
             variant={isRunning ? "destructive" : "default"}
           >
-            {isRunning ? (
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isRunning ? "Stopping..." : "Starting..."}
+              </>
+            ) : isRunning ? (
               <>
                 <Pause className="mr-2 h-4 w-4" />
                 {isMobile ? "Stop" : "Stop Simulation"}
@@ -112,10 +123,14 @@ export function SimulationControls() {
           <Button
             variant="outline"
             size={isMobile ? "default" : "icon"}
-            disabled={loading}
-            className="sm:w-auto bg-transparent"
+            disabled={isLoading || scenarioLoading}
+            className="sm:w-auto bg-transparent transition-all duration-200"
           >
-            <RotateCcw className="h-4 w-4" />
+            {isLoading || scenarioLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCcw className="h-4 w-4" />
+            )}
             {isMobile && <span className="ml-2">Reset</span>}
           </Button>
         </div>
@@ -123,12 +138,15 @@ export function SimulationControls() {
         <div className="space-y-2">
           <label className="text-sm font-medium">Attack Scenario</label>
           <Select
-            value={currentScenario}
+            defaultValue="normal"
             onValueChange={handleScenarioChange}
-            disabled={loading}
+            disabled={isLoading || scenarioLoading}
           >
             <SelectTrigger className="h-10">
               <SelectValue placeholder="Select scenario" />
+              {scenarioLoading && (
+                <Loader2 className="h-4 w-4 animate-spin ml-2" />
+              )}
             </SelectTrigger>
             <SelectContent>
               {scenarios.map((scenario) => (
@@ -151,14 +169,14 @@ export function SimulationControls() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
             <div className="flex justify-between sm:flex-col sm:justify-start">
               <span className="text-muted-foreground">Events Generated:</span>
-              <div className="font-mono font-medium">
-                {status.metrics?.eventsGenerated || 0}
+              <div className="font-mono font-medium text-blue-600 dark:text-blue-400">
+                {status.eventsCount || 0}
               </div>
             </div>
             <div className="flex justify-between sm:flex-col sm:justify-start">
-              <span className="text-muted-foreground">Anomalies Detected:</span>
-              <div className="font-mono font-medium">
-                {status.metrics?.anomaliesDetected || 0}
+              <span className="text-muted-foreground">Alerts Detected:</span>
+              <div className="font-mono font-medium text-red-600 dark:text-red-400">
+                {status.alertsCount || 0}
               </div>
             </div>
           </div>
