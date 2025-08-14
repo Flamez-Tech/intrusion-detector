@@ -1,15 +1,16 @@
-import { NetworkSimulator } from "../simulators/networkSimulator.js"
-import { AnomalyDetector } from "../models/anomalyDetector.js"
-import { Logger } from "../utils/logger.js"
+import { NetworkSimulator } from "../simulators/networkSimulator.js";
+import { AnomalyDetector } from "../models/anomalyDetector.js";
+import { Logger } from "../utils/logger.js";
 
 export class DetectionService {
   constructor() {
-    this.simulator = new NetworkSimulator()
-    this.detector = new AnomalyDetector()
-    this.subscribers = new Set()
-    this.simulationInterval = null
-    this.detectionInterval = null
-    this.isRunning = false
+    this.simulator = new NetworkSimulator();
+    this.detector = new AnomalyDetector();
+    this.subscribers = new Set();
+    this.simulationInterval = null;
+    this.detectionInterval = null;
+    this.isRunning = false;
+    this.socketServer = null; // Added Socket.IO server reference
 
     // Performance metrics
     this.metrics = {
@@ -17,102 +18,116 @@ export class DetectionService {
       anomaliesDetected: 0,
       alertsGenerated: 0,
       uptime: Date.now(),
-    }
+    };
+  }
+
+  setSocketServer(io) {
+    this.socketServer = io;
+    Logger.info("Socket.IO server connected to detection service");
   }
 
   // Event subscription for real-time updates
   subscribe(callback) {
-    this.subscribers.add(callback)
-    Logger.debug("New subscriber added", { totalSubscribers: this.subscribers.size })
+    this.subscribers.add(callback);
+    Logger.debug("New subscriber added", {
+      totalSubscribers: this.subscribers.size,
+    });
 
     return () => {
-      this.subscribers.delete(callback)
-      Logger.debug("Subscriber removed", { totalSubscribers: this.subscribers.size })
-    }
+      this.subscribers.delete(callback);
+      Logger.debug("Subscriber removed", {
+        totalSubscribers: this.subscribers.size,
+      });
+    };
   }
 
   broadcast(event) {
     this.subscribers.forEach((callback) => {
       try {
-        callback(event)
+        callback(event);
       } catch (error) {
-        Logger.error("Error broadcasting to subscriber", error)
+        Logger.error("Error broadcasting to subscriber", error);
       }
-    })
+    });
+
+    // Broadcast to Socket.IO clients
+    if (this.socketServer) {
+      this.socketServer.emit(event.type, event.data);
+    }
   }
 
   start() {
     if (this.isRunning) {
-      Logger.warn("Detection service already running")
-      return false
+      Logger.warn("Detection service already running");
+      return false;
     }
 
-    this.isRunning = true
-    this.simulator.start()
-    this.metrics.uptime = Date.now()
+    this.isRunning = true;
+    this.simulator.start();
+    this.metrics.uptime = Date.now();
 
     // Start event generation
     this.simulationInterval = setInterval(() => {
       if (this.simulator.isRunning) {
-        const event = this.simulator.generateEvent()
-        this.metrics.eventsGenerated++
+        const event = this.simulator.generateEvent();
+        this.metrics.eventsGenerated++;
 
         // Broadcast new event
         this.broadcast({
           type: "event",
           data: event,
-        })
+        });
       }
-    }, Number.parseInt(process.env.SIMULATION_INTERVAL) || 1000)
+    }, Number.parseInt(process.env.SIMULATION_INTERVAL) || 1000);
 
     // Start anomaly detection (runs less frequently)
     this.detectionInterval = setInterval(() => {
-      this.runDetection()
-    }, 5000) // Run detection every 5 seconds
+      this.runDetection();
+    }, 5000); // Run detection every 5 seconds
 
-    Logger.info("Detection service started")
+    Logger.info("Detection service started");
 
     this.broadcast({
       type: "status",
-      data: { isRunning: true, message: "Detection service started" },
-    })
+      data: this.getStatus(),
+    });
 
-    return true
+    return true;
   }
 
   stop() {
     if (!this.isRunning) {
-      Logger.warn("Detection service not running")
-      return false
+      Logger.warn("Detection service not running");
+      return false;
     }
 
-    this.isRunning = false
-    this.simulator.stop()
+    this.isRunning = false;
+    this.simulator.stop();
 
     if (this.simulationInterval) {
-      clearInterval(this.simulationInterval)
-      this.simulationInterval = null
+      clearInterval(this.simulationInterval);
+      this.simulationInterval = null;
     }
 
     if (this.detectionInterval) {
-      clearInterval(this.detectionInterval)
-      this.detectionInterval = null
+      clearInterval(this.detectionInterval);
+      this.detectionInterval = null;
     }
 
-    Logger.info("Detection service stopped")
+    Logger.info("Detection service stopped");
 
     this.broadcast({
       type: "status",
-      data: { isRunning: false, message: "Detection service stopped" },
-    })
+      data: this.getStatus(),
+    });
 
-    return true
+    return true;
   }
 
   runDetection() {
     try {
-      const events = this.simulator.getRecentEvents(100)
-      const result = this.detector.detectAnomalies(events)
+      const events = this.simulator.getRecentEvents(100);
+      const result = this.detector.detectAnomalies(events);
 
       if (result) {
         // Broadcast anomaly score update
@@ -126,42 +141,42 @@ export class DetectionService {
             threshold: result.threshold,
             timestamp: new Date().toISOString(),
           },
-        })
+        });
 
         // If anomaly detected, broadcast alert
         if (result.isAnomaly && result.alert) {
-          this.metrics.anomaliesDetected++
-          this.metrics.alertsGenerated++
+          this.metrics.anomaliesDetected++;
+          this.metrics.alertsGenerated++;
 
           this.broadcast({
             type: "alert",
             data: result.alert,
-          })
+          });
         }
       }
     } catch (error) {
-      Logger.error("Error during anomaly detection", error)
+      Logger.error("Error during anomaly detection", error);
     }
   }
 
   // Control methods
   setScenario(scenario) {
-    const success = this.simulator.setScenario(scenario)
+    const success = this.simulator.setScenario(scenario);
     if (success) {
       this.broadcast({
         type: "scenario",
         data: { scenario, message: `Scenario changed to ${scenario}` },
-      })
+      });
     }
-    return success
+    return success;
   }
 
   setThreshold(threshold) {
-    this.detector.setThreshold(threshold)
+    this.detector.setThreshold(threshold);
     this.broadcast({
       type: "threshold",
       data: { threshold, message: `Detection threshold set to ${threshold}` },
-    })
+    });
   }
 
   // Data access methods
@@ -175,29 +190,29 @@ export class DetectionService {
         uptime: Date.now() - this.metrics.uptime,
       },
       subscribers: this.subscribers.size,
-    }
+    };
   }
 
   getRecentEvents(count = 50) {
-    return this.simulator.getRecentEvents(count)
+    return this.simulator.getRecentEvents(count);
   }
 
   getRecentAlerts(count = 20) {
-    return this.detector.getRecentAlerts(count)
+    return this.detector.getRecentAlerts(count);
   }
 
   clearAlerts() {
-    this.detector.clearAlerts()
+    this.detector.clearAlerts();
     this.broadcast({
       type: "alerts_cleared",
       data: { message: "Alert history cleared" },
-    })
+    });
   }
 
   // Get current anomaly score and features
   getCurrentAnomalyData() {
-    const events = this.simulator.getRecentEvents(50)
-    const result = this.detector.detectAnomalies(events)
+    const events = this.simulator.getRecentEvents(50);
+    const result = this.detector.detectAnomalies(events);
 
     return (
       result || {
@@ -207,9 +222,9 @@ export class DetectionService {
         featureScores: {},
         threshold: this.detector.threshold,
       }
-    )
+    );
   }
 }
 
 // Singleton instance
-export const detectionService = new DetectionService()
+export const detectionService = new DetectionService();

@@ -1,63 +1,92 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Play, Pause, RotateCcw } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { useDetectionData } from "@/src/hooks/useDetectionData"
-import { SIMULATION_CONFIG } from "@/src/server/config/detection"
-import { useMobile } from "@/src/hooks/useMobile" // Added mobile hook for responsive design
+import { useState } from "react";
+import { Play, Pause, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useDetectionData } from "@/src/hooks/useDetectionData";
+import { SIMULATION_CONFIG } from "@/src/server/config/detection";
+import { useMobile } from "@/src/hooks/useMobile"; // Added mobile hook for responsive design
 
 export function SimulationControls() {
-  const { status, startSimulation, stopSimulation, setScenario } = useDetectionData()
-  const [loading, setLoading] = useState(false)
-  const isMobile = useMobile() // Added mobile hook for responsive design
+  const { status, startSimulation, stopSimulation, setScenario } =
+    useDetectionData();
+  const [loading, setLoading] = useState(false);
+  const isMobile = useMobile(); // Added mobile hook for responsive design
 
-  const isRunning = status?.isRunning || false
-  const currentScenario = status?.simulator?.currentScenario || "normal"
+  const isRunning = status?.isRunning || false;
+  const currentScenario = status?.simulator?.currentScenario || "normal";
 
   const handleToggleSimulation = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       if (isRunning) {
-        await stopSimulation()
+        await stopSimulation();
       } else {
-        await startSimulation()
+        await startSimulation();
       }
     } catch (error) {
-      console.error("Failed to toggle simulation:", error)
+      if (
+        error.message.includes("already running") ||
+        error.message.includes("already stopped")
+      ) {
+        console.log("State sync issue, refreshing status...");
+        // Refresh status to sync state
+      } else if (error.message.includes("Failed to fetch")) {
+        console.error("Network connection issue:", error.message);
+      } else {
+        console.error("Simulation control error:", error.message);
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleScenarioChange = async (scenario) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      await setScenario(scenario)
+      await setScenario(scenario);
     } catch (error) {
-      console.error("Failed to change scenario:", error)
+      console.error("Failed to change scenario:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const scenarios = Object.entries(SIMULATION_CONFIG.scenarios).map(([key, config]) => ({
-    value: key,
-    label: config.name,
-    description: config.description,
-  }))
+  const scenarios = Object.entries(SIMULATION_CONFIG.scenarios).map(
+    ([key, config]) => ({
+      value: key,
+      label: config.name,
+      description: config.description,
+    })
+  );
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <span className="text-base sm:text-lg">Simulation Controls</span>
-          <Badge variant={isRunning ? "default" : "secondary"}>{isRunning ? "Running" : "Stopped"}</Badge>
+          <Badge variant={isRunning ? "default" : "secondary"}>
+            {isRunning ? "Running" : "Stopped"}
+          </Badge>
         </CardTitle>
-        <CardDescription className="text-sm">Control network traffic simulation and attack scenarios</CardDescription>
+        <CardDescription className="text-sm">
+          Control network traffic simulation and attack scenarios
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
@@ -93,7 +122,11 @@ export function SimulationControls() {
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Attack Scenario</label>
-          <Select value={currentScenario} onValueChange={handleScenarioChange} disabled={loading}>
+          <Select
+            value={currentScenario}
+            onValueChange={handleScenarioChange}
+            disabled={loading}
+          >
             <SelectTrigger className="h-10">
               <SelectValue placeholder="Select scenario" />
             </SelectTrigger>
@@ -102,7 +135,11 @@ export function SimulationControls() {
                 <SelectItem key={scenario.value} value={scenario.value}>
                   <div className="flex flex-col">
                     <span className="text-sm">{scenario.label}</span>
-                    {!isMobile && <span className="text-xs text-muted-foreground">{scenario.description}</span>}
+                    {!isMobile && (
+                      <span className="text-xs text-muted-foreground">
+                        {scenario.description}
+                      </span>
+                    )}
                   </div>
                 </SelectItem>
               ))}
@@ -114,15 +151,19 @@ export function SimulationControls() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
             <div className="flex justify-between sm:flex-col sm:justify-start">
               <span className="text-muted-foreground">Events Generated:</span>
-              <div className="font-mono font-medium">{status.metrics?.eventsGenerated || 0}</div>
+              <div className="font-mono font-medium">
+                {status.metrics?.eventsGenerated || 0}
+              </div>
             </div>
             <div className="flex justify-between sm:flex-col sm:justify-start">
               <span className="text-muted-foreground">Anomalies Detected:</span>
-              <div className="font-mono font-medium">{status.metrics?.anomaliesDetected || 0}</div>
+              <div className="font-mono font-medium">
+                {status.metrics?.anomaliesDetected || 0}
+              </div>
             </div>
           </div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

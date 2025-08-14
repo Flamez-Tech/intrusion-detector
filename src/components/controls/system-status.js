@@ -56,6 +56,11 @@ export function SystemStatus() {
     return { status: "healthy", message: "All Systems Operational" }
   }
 
+  const lastUpdateStr = systemMetrics.lastUpdate.toLocaleTimeString("en-US", {
+    hour12: false,
+  });
+
+
   const health = getSystemHealth()
 
   const getHealthColor = (status) => {
@@ -79,18 +84,28 @@ export function SystemStatus() {
             <Activity className="h-5 w-5" />
             <span>System Status</span>
           </div>
-          <Badge className={getHealthColor(health.status)}>{health.message}</Badge>
+          <Badge className={getHealthColor(health.status)}>
+            {health.message}
+          </Badge>
         </CardTitle>
-        <CardDescription>Real-time system health and performance metrics</CardDescription>
+        <CardDescription>
+          Real-time system health and performance metrics
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Connection Status */}
         <div className="flex items-center justify-between p-3 rounded-lg border">
           <div className="flex items-center space-x-2">
-            <Wifi className={`h-4 w-4 ${isConnected ? "text-green-500" : "text-red-500"}`} />
+            <Wifi
+              className={`h-4 w-4 ${
+                isConnected ? "text-green-500" : "text-red-500"
+              }`}
+            />
             <span className="text-sm font-medium">Connection</span>
           </div>
-          <Badge variant={isConnected ? "default" : "destructive"}>{isConnected ? "Connected" : "Disconnected"}</Badge>
+          <Badge variant={isConnected ? "default" : "destructive"}>
+            {isConnected ? "Connected" : "Disconnected"}
+          </Badge>
         </div>
 
         {/* System Metrics */}
@@ -100,7 +115,9 @@ export function SystemStatus() {
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">Uptime</span>
             </div>
-            <span className="text-sm font-mono">{formatUptime(systemMetrics.uptime)}</span>
+            <span className="text-sm font-mono">
+              {formatUptime(systemMetrics.uptime)}
+            </span>
           </div>
 
           <div className="space-y-2">
@@ -109,7 +126,9 @@ export function SystemStatus() {
                 <HardDrive className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">Memory Usage</span>
               </div>
-              <span className="text-sm font-mono">{systemMetrics.memoryUsage.toFixed(1)}%</span>
+              <span className="text-sm font-mono">
+                {systemMetrics.memoryUsage.toFixed(1)}%
+              </span>
             </div>
             <Progress value={systemMetrics.memoryUsage} className="h-2" />
           </div>
@@ -119,7 +138,9 @@ export function SystemStatus() {
               <Cpu className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">Processing Rate</span>
             </div>
-            <span className="text-sm font-mono">{systemMetrics.eventProcessingRate.toFixed(1)} events/s</span>
+            <span className="text-sm font-mono">
+              {systemMetrics.eventProcessingRate.toFixed(1)} events/s
+            </span>
           </div>
         </div>
 
@@ -135,7 +156,9 @@ export function SystemStatus() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Anomaly Detection</span>
-              <Badge variant={status?.detector?.isReady ? "default" : "secondary"}>
+              <Badge
+                variant={status?.detector?.isReady ? "default" : "secondary"}
+              >
                 {status?.detector?.isReady ? "Active" : "Learning"}
               </Badge>
             </div>
@@ -155,29 +178,40 @@ export function SystemStatus() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Events Generated:</span>
-                <div className="font-mono">{status.metrics.eventsGenerated?.toLocaleString() || 0}</div>
+                <div className="font-mono">
+                  {status.metrics.eventsGenerated?.toLocaleString() || 0}
+                </div>
               </div>
               <div>
-                <span className="text-muted-foreground">Anomalies Detected:</span>
-                <div className="font-mono">{status.metrics.anomaliesDetected?.toLocaleString() || 0}</div>
+                <span className="text-muted-foreground">
+                  Anomalies Detected:
+                </span>
+                <div className="font-mono">
+                  {status.metrics.anomaliesDetected?.toLocaleString() || 0}
+                </div>
               </div>
               <div>
                 <span className="text-muted-foreground">Alerts Generated:</span>
-                <div className="font-mono">{status.metrics.alertsGenerated?.toLocaleString() || 0}</div>
+                <div className="font-mono">
+                  {status.metrics.alertsGenerated?.toLocaleString() || 0}
+                </div>
               </div>
               <div>
-                <span className="text-muted-foreground">Active Subscribers:</span>
+                <span className="text-muted-foreground">
+                  Active Subscribers:
+                </span>
                 <div className="font-mono">{status.subscribers || 0}</div>
               </div>
             </div>
           </div>
         )}
 
+        {/* TODO: UNCOMMENT THE BLOCK OF CODE BELOW AND DEBUG IT  */}
         {/* Last Update */}
-        <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-          Last updated: {systemMetrics.lastUpdate.toLocaleTimeString()}
-        </div>
+        {/* <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+          Last updated: {lastUpdateStr}
+        </div> */}
       </CardContent>
     </Card>
-  )
+  );
 }

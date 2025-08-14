@@ -1,11 +1,12 @@
-import { detectionService } from "@/src/server/services/detectionService.js"
+import { getMockDetectionService } from "@/src/lib/mockDetectionService.js"
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const count = Number.parseInt(searchParams.get("count")) || 50
-    const limitedCount = Math.min(Math.max(count, 1), 200) // Limit between 1-200
+    const limitedCount = Math.min(Math.max(count, 1), 200)
 
+    const detectionService = getMockDetectionService()
     const events = detectionService.getRecentEvents(limitedCount)
 
     return Response.json({
@@ -14,6 +15,7 @@ export async function GET(request) {
       count: events.length,
     })
   } catch (error) {
+    console.error("Events API error:", error)
     return Response.json(
       {
         success: false,
