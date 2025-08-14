@@ -208,9 +208,9 @@ export function SystemStatus() {
 
         {/* TODO: UNCOMMENT THE BLOCK OF CODE BELOW AND DEBUG IT  */}
         {/* Last Update */}
-        {/* <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+        <div className="text-xs text-muted-foreground text-center pt-2 border-t">
           Last updated: {lastUpdateStr}
-        </div> */}
+        </div>
       </CardContent>
     </Card>
   );
